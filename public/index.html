@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Water Project Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #f0f4f8; /* Light gray background */
+      }
+      .chart-container {
+        position: relative;
+        height: 350px; /* Adjusted height for better visibility */
+        width: 100%;
+      }
+      /* Custom scrollbar for project details on page 2 if content overflows */
+      .project-details-card {
+        max-height: 70vh;
+        overflow-y: auto;
+      }
+      .project-details-card::-webkit-scrollbar {
+        width: 8px;
+      }
+      .project-details-card::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+      }
+      .project-details-card::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 10px;
+      }
+      .project-details-card::-webkit-scrollbar-thumb:hover {
+        background: #555;
+      }
+      /* Ensure select dropdowns are styled consistently */
+      select {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23007AFF%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.7em top 50%;
+        background-size: 0.65em auto;
+        padding-right: 2.5em; /* Ensure space for arrow */
+      }
+    </style>
+  </head>
+  <body class="text-gray-800">
+    <div class="container mx-auto p-4 md:p-6 lg:p-8">
+      <div id="summaryPage">
+        <header class="mb-8 text-center">
+          <h1 class="text-3xl md:text-4xl font-bold text-blue-700">
+            Kajiado North Community Water Operators Summary
+          </h1>
+        </header>
+
+        <div
+          class="mb-8 flex flex-col sm:flex-row items-center justify-center gap-4"
+        >
+          <label
+            for="projectSelectorPage1"
+            class="text-lg font-medium text-gray-700"
+            >View Individual Project Data:</label
+          >
+          <select
+            id="projectSelectorPage1"
+            class="p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out bg-white w-full sm:w-auto max-w-xs"
+          ></select>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
+          <div class="bg-white p-6 rounded-xl shadow-lg">
+            <h2 class="text-xl font-semibold mb-4 text-center text-gray-700">
+              Current Number of Connections
+            </h2>
+            <div class="chart-container">
+              <canvas id="connectionsChart"></canvas>
+            </div>
+          </div>
+
+          <div class="bg-white p-6 rounded-xl shadow-lg">
+            <h2 class="text-xl font-semibold mb-4 text-center text-gray-700">
+              Total Number of Employees
+            </h2>
+            <div class="chart-container">
+              <canvas id="employeesChart"></canvas>
+            </div>
+          </div>
+
+          <div class="bg-white p-6 rounded-xl shadow-lg">
+            <h2 class="text-xl font-semibold mb-4 text-center text-gray-700">
+              Volume Supplied Per Month (m³)
+            </h2>
+            <div class="chart-container">
+              <canvas id="volumeChart"></canvas>
+            </div>
+          </div>
+
+          <div class="bg-white p-6 rounded-xl shadow-lg">
+            <h2 class="text-xl font-semibold mb-4 text-center text-gray-700">
+              Avg. Selling Price (KES/m³)
+            </h2>
+            <div class="chart-container">
+              <canvas id="priceChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="projectDetailPage" class="hidden">
+        <header
+          class="mb-6 flex flex-col sm:flex-row justify-between items-center"
+        >
+          <h1
+            id="projectDetailTitle"
+            class="text-2xl md:text-3xl font-bold text-blue-700 mb-4 sm:mb-0"
+          >
+            Project Details
+          </h1>
+          <div class="flex flex-col sm:flex-row items-center gap-3">
+            <label
+              for="projectSelectorPage2"
+              class="text-md font-medium text-gray-700 whitespace-nowrap"
+              >View Another Project:</label
+            >
+            <select
+              id="projectSelectorPage2"
+              class="p-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out bg-white w-full sm:w-auto max-w-xs"
+            ></select>
+            <button
+              id="backToSummaryBtn"
+              class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:shadow-lg transition duration-150 ease-in-out w-full sm:w-auto"
+            >
+              Back to Summary
+            </button>
+          </div>
+        </header>
+
+        <div
+          id="projectDetailsContent"
+          class="bg-white p-6 md:p-8 rounded-xl shadow-lg project-details-card"
+        ></div>
+      </div>
+    </div>
+
+    <script>
+      // --- Data ---
+      // The hardcoded data below is now commented out.
+      // Data will be fetched from your Google Apps Script.
+      /*
+        const waterProjectsData = [
+          {
+            Identifier: "Kibiko Water",
+            "Registered Name": "Kibiko Community Water Project",
+            "Sub-County Located": "Kajiado North",
+            "General Area of Operation": "Kibiko",
+            "Highest Number of Connections": 500,
+            "Current Number of Connections": 450,
+            "Approximate Households Covered": 400,
+            "Number of Active Connections": 430,
+            "Volume Supplied Per Month": 15000,
+            "Average Selling Price Per Water Unit": 50,
+            "Total Number of Employees": 12,
+            "Total Number of Active Boreholes": 3,
+            "Total Number of Boreholes With Solar": 1,
+            "Total Number of Boreholes, Including Those not Finished or Active": 4,
+            "Total Number of Households In The Coverage Area": 600,
+          },
+          // ... other hardcoded project data ...
+        ];
+        */
+
+      // This variable will hold the data fetched from your Google Sheet
+      let waterProjectsData = [];
+
+      const projectColors = [
+        "#FF6384",
+        "#36A2EB",
+        "#FFCE56",
+        "#4BC0C0",
+        "#9966FF",
+        "#FF9F40",
+        "#8AC926",
+        "#F06292",
+      ];
+
+      // --- Chart Instances ---
+      let connectionsChartInstance,
+        employeesChartInstance,
+        volumeChartInstance,
+        priceChartInstance;
+
+      // --- DOM Elements ---
+      const summaryPage = document.getElementById("summaryPage");
+      const projectDetailPage = document.getElementById("projectDetailPage");
+      const projectSelectorPage1 = document.getElementById(
+        "projectSelectorPage1"
+      );
+      const projectSelectorPage2 = document.getElementById(
+        "projectSelectorPage2"
+      );
+      const backToSummaryBtn = document.getElementById("backToSummaryBtn");
+      const projectDetailTitle = document.getElementById("projectDetailTitle");
+      const projectDetailsContent = document.getElementById(
+        "projectDetailsContent"
+      );
+
+      // --- Helper Functions ---
+
+      // Function to create a bar chart
+      function createBarChart(canvasId, label, data, labels, backgroundColors) {
+        const ctx = document.getElementById(canvasId).getContext("2d");
+        return new Chart(ctx, {
+          type: "bar",
+          data: {
+            labels: labels, // Project Identifiers
+            datasets: [
+              {
+                label: label,
+                data: data, // Corresponding data values
+                backgroundColor: backgroundColors,
+                borderColor: backgroundColors.map(
+                  (color) => color.replace("0.7", "1") // Darker border
+                ),
+                borderWidth: 1,
+                borderRadius: 5, // Rounded bars
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              y: {
+                beginAtZero: true,
+                grid: { color: "#e0e0e0" }, // Lighter grid lines
+                ticks: { color: "#333", font: { family: "Inter" } },
+              },
+              x: {
+                grid: { display: false }, // Hide x-axis grid lines
+                ticks: { color: "#333", font: { family: "Inter" } },
+              },
+            },
+            plugins: {
+              legend: { display: false }, // Hide legend
+              tooltip: {
+                enabled: true,
+                backgroundColor: "rgba(0,0,0,0.8)",
+                titleFont: { size: 14, family: "Inter", weight: "bold" },
+                bodyFont: { size: 12, family: "Inter" },
+                callbacks: {
+                  label: function (context) {
+                    const projectIdentifier =
+                      context.chart.data.labels[context.dataIndex];
+                    return `${projectIdentifier}: ${context.parsed.y}`;
+                  },
+                },
+              },
+            },
+            onHover: (event, chartElement) => {
+              event.native.target.style.cursor = chartElement[0]
+                ? "pointer"
+                : "default";
+            },
+          },
+        });
+      }
+
+      // Function to populate project selector dropdowns
+      function populateProjectSelectors() {
+        projectSelectorPage1.innerHTML = ""; // Clear existing options
+        projectSelectorPage2.innerHTML = ""; // Clear existing options
+
+        const defaultOptionPage1 = document.createElement("option");
+        defaultOptionPage1.value = "";
+        defaultOptionPage1.textContent = "Select a project...";
+        defaultOptionPage1.disabled = true;
+        defaultOptionPage1.selected = true;
+        projectSelectorPage1.appendChild(defaultOptionPage1);
+
+        // Create a document fragment to batch append options for Page 2 selector
+        const page2Fragment = document.createDocumentFragment();
+        const defaultOptionPage2 = defaultOptionPage1.cloneNode(true); // Clone default for Page 2
+        page2Fragment.appendChild(defaultOptionPage2);
+
+        if (waterProjectsData && waterProjectsData.length > 0) {
+          waterProjectsData.forEach((project) => {
+            const option1 = document.createElement("option");
+            option1.value = project.Identifier;
+            option1.textContent = project.Identifier;
+            projectSelectorPage1.appendChild(option1);
+
+            const option2 = document.createElement("option");
+            option2.value = project.Identifier;
+            option2.textContent = project.Identifier;
+            page2Fragment.appendChild(option2);
+          });
+        } else {
+          const noDataOption = document.createElement("option");
+          noDataOption.textContent = "No projects loaded";
+          noDataOption.disabled = true;
+          projectSelectorPage1.appendChild(noDataOption.cloneNode(true));
+          page2Fragment.appendChild(noDataOption);
+        }
+        projectSelectorPage2.appendChild(page2Fragment);
+      }
+
+      // Function to display project details on Page 2
+      function displayProjectDetails(projectId) {
+        const project = waterProjectsData.find(
+          (p) => p.Identifier === projectId
+        );
+        if (!project) {
+          projectDetailsContent.innerHTML = `<p class="text-red-500">Project not found.</p>`;
+          projectDetailTitle.textContent = "Project Details";
+          return;
+        }
+
+        projectDetailTitle.textContent = `${project.Identifier} - Details`;
+        projectSelectorPage2.value = projectId;
+
+        const fieldsToDisplay = [
+          { key: "Registered Name", label: "Registered Name" },
+          { key: "Sub-County Located", label: "Sub-County" },
+          { key: "General Area of Operation", label: "Area of Operation" },
+          {
+            key: "Highest Number of Connections",
+            label: "Highest Connections",
+          },
+          {
+            key: "Current Number of Connections",
+            label: "Current Connections",
+          },
+          {
+            key: "Approximate Households Covered",
+            label: "Approx. Households Covered",
+          },
+          { key: "Number of Active Connections", label: "Active Connections" },
+          {
+            key: "Volume Supplied Per Month",
+            label: "Volume Supplied/Month (m³)",
+          },
+          {
+            key: "Average Selling Price Per Water Unit",
+            label: "Avg. Price/Unit (KES/m³)",
+          },
+          { key: "Total Number of Employees", label: "Total Employees" },
+          {
+            key: "Total Number of Active Boreholes",
+            label: "Active Boreholes",
+          },
+          {
+            key: "Total Number of Boreholes With Solar",
+            label: "Solar Boreholes",
+          },
+          {
+            key: "Total Number of Boreholes, Including Those not Finished or Active",
+            label: "Total Boreholes (All)",
+          },
+          {
+            key: "Total Number of Households In The Coverage Area",
+            label: "Total Households in Area",
+          },
+        ];
+
+        let detailsHtml =
+          '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">';
+        fieldsToDisplay.forEach((field) => {
+          detailsHtml += `
+              <div class="border-b border-gray-200 pb-2">
+                  <p class="text-sm font-medium text-gray-500">${
+                    field.label
+                  }:</p>
+                  <p class="text-md font-semibold text-gray-800">${
+                    project[field.key] !== undefined
+                      ? project[field.key]
+                      : "N/A"
+                  }</p>
+              </div>`;
+        });
+        detailsHtml += "</div>";
+        projectDetailsContent.innerHTML = detailsHtml;
+
+        summaryPage.classList.add("hidden");
+        projectDetailPage.classList.remove("hidden");
+        window.scrollTo(0, 0); // Scroll to top
+      }
+
+      // Function to switch to summary page
+      function showSummaryPage() {
+        projectDetailPage.classList.add("hidden");
+        summaryPage.classList.remove("hidden");
+        projectSelectorPage1.value = ""; // Reset Page 1 dropdown
+        window.scrollTo(0, 0); // Scroll to top
+      }
+
+      // Function to initialize charts and populate selectors AFTER data is fetched
+      function initializeDashboard() {
+        if (!waterProjectsData || waterProjectsData.length === 0) {
+          console.error(
+            "No water project data available to initialize dashboard."
+          );
+          // Display a more prominent error message on the page if charts cannot be loaded
+          const chartsContainer = document.querySelector(
+            ".grid.grid-cols-1.md\\:grid-cols-2.gap-6.lg\\:gap-8"
+          );
+          if (chartsContainer) {
+            chartsContainer.innerHTML =
+              '<p class="col-span-full text-center text-red-500 text-xl p-10">Could not load project data for charts. Please check the data source and configuration.</p>';
+          }
+          // Still attempt to populate selectors so user sees "No projects loaded"
+          populateProjectSelectors();
+          return;
+        }
+
+        populateProjectSelectors();
+
+        const projectIdentifiers = waterProjectsData.map((p) => p.Identifier);
+        const assignedColors = projectIdentifiers.map(
+          (_, index) => projectColors[index % projectColors.length]
+        );
+
+        // Data for charts - ensure numerical conversion
+        const connectionsData = waterProjectsData.map(
+          (p) => Number(p["Current Number of Connections"]) || 0
+        );
+        const employeesData = waterProjectsData.map(
+          (p) => Number(p["Total Number of Employees"]) || 0
+        );
+        const volumeData = waterProjectsData.map(
+          (p) => Number(p["Volume Supplied Per Month"]) || 0
+        );
+        const priceData = waterProjectsData.map(
+          (p) => Number(p["Average Selling Price Per Water Unit"]) || 0
+        );
+
+        // Destroy existing charts if they exist before creating new ones
+        if (connectionsChartInstance) connectionsChartInstance.destroy();
+        if (employeesChartInstance) employeesChartInstance.destroy();
+        if (volumeChartInstance) volumeChartInstance.destroy();
+        if (priceChartInstance) priceChartInstance.destroy();
+
+        // Create charts
+        connectionsChartInstance = createBarChart(
+          "connectionsChart",
+          "Current Connections",
+          connectionsData,
+          projectIdentifiers,
+          assignedColors
+        );
+        employeesChartInstance = createBarChart(
+          "employeesChart",
+          "Total Employees",
+          employeesData,
+          projectIdentifiers,
+          assignedColors
+        );
+        volumeChartInstance = createBarChart(
+          "volumeChart",
+          "Volume Supplied (m³)",
+          volumeData,
+          projectIdentifiers,
+          assignedColors
+        );
+        priceChartInstance = createBarChart(
+          "priceChart",
+          "Avg. Price (KES/m³)",
+          priceData,
+          projectIdentifiers,
+          assignedColors
+        );
+      }
+
+      // --- Initialize Dashboard ---
+      document.addEventListener("DOMContentLoaded", () => {
+        const webAppUrl =
+          "https://script.google.com/macros/s/AKfycby7Z5arrMHHd114qdp1zF-AzUkYU1aNIY9q2Gs0q8lMNif2sgNWW8LsGu4EZuYUrDOdOA/exec"; // Your Web App URL
+
+        fetch(webAppUrl)
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error(
+                `Network response was not ok: ${response.status} ${response.statusText}`
+              );
+            }
+            return response.json();
+          })
+          .then((data) => {
+            if (data.error) {
+              // Check for custom error from Apps Script
+              throw new Error(`Error from Apps Script: ${data.error}`);
+            }
+            if (!Array.isArray(data)) {
+              throw new Error(
+                "Data received is not in the expected array format."
+              );
+            }
+            waterProjectsData = data; // Assign fetched data
+            initializeDashboard(); // Initialize dashboard AFTER data is loaded
+          })
+          .catch((error) => {
+            console.error("Error fetching or processing data:", error);
+            // Display an error message to the user on the page
+            const summaryContent = document.getElementById("summaryPage");
+            // More robustly find the place to put the error message
+            let errorDisplayContainer = document.querySelector(
+              ".grid.grid-cols-1.md\\:grid-cols-2.gap-6.lg\\:gap-8"
+            );
+            if (!errorDisplayContainer && summaryContent) {
+              // Fallback to summaryPage if specific chart container not found
+              errorDisplayContainer = summaryContent;
+            }
+
+            if (errorDisplayContainer) {
+              errorDisplayContainer.innerHTML = `<p class="col-span-full text-center text-red-600 text-lg p-8 bg-red-100 border border-red-300 rounded-lg">
+                                                      <strong>Failed to load project data:</strong><br>${error.message}<br>
+                                                      Please ensure the Google Sheet is correctly set up, the Apps Script is deployed, and the sheet contains data.
+                                                     </p>`;
+            }
+            // Still attempt to populate selectors so user sees "No projects loaded" or an error.
+            populateProjectSelectors();
+          });
+
+        // Event Listeners
+        projectSelectorPage1.addEventListener("change", (event) => {
+          if (event.target.value) {
+            displayProjectDetails(event.target.value);
+          }
+        });
+
+        projectSelectorPage2.addEventListener("change", (event) => {
+          if (event.target.value) {
+            displayProjectDetails(event.target.value);
+          }
+        });
+
+        backToSummaryBtn.addEventListener("click", showSummaryPage);
+      });
+    </script>
+  </body>
+</html>
